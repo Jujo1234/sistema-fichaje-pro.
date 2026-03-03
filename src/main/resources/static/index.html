@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Fichaje Profesional</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; margin-top: 10px; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-in { background: #28a745; color: white; }
+        .btn-out { background: #dc3545; color: white; }
+        
+        button:disabled {
+            background-color: #cccccc !important;
+            color: #666666 !important;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        #seccionFichaje { display: none; } 
+        .reloj { font-size: 24px; font-weight: bold; color: #333; margin: 15px 0; }
+
+        /* Estilos nuevos para la lista de historial */
+        .historial-container { margin-top: 20px; text-align: left; border-top: 1px solid #eee; padding-top: 10px; }
+        .historial-lista { list-style: none; padding: 0; font-size: 13px; max-height: 150px; overflow-y: auto; }
+        .historial-item { padding: 5px 0; border-bottom: 1px solid #f9f9f9; display: flex; justify-content: space-between; }
+    </style>
+</head>
+<body>
+
+    <div id="seccionLogin" class="card">
+        <h2>Acceso Empleado</h2>
+        <input type="text" id="idEmpleado" placeholder="ID / DNI">
+        <input type="password" id="passEmpleado" placeholder="Contraseña">
+        <button class="btn-primary" onclick="validarAcceso()">Entrar al Panel</button>
+        <p id="errorLogin" style="color: red;"></p>
+    </div>
+
+    <div id="seccionFichaje" class="card">
+        <h2 id="saludo">Hola</h2>
+        <div class="reloj" id="relojDigital">00:00:00</div>
+        
+        <label>Fecha del fichaje:</label>
+        <input type="date" id="fechaFichaje">
+        <label>Hora del fichaje:</label>
+        <input type="time" id="horaFichaje">
+        
+        <button id="btnEntrada" class="btn-in" onclick="fichar('ENTRADA')">Confirmar ENTRADA</button>
+        <button id="btnSalida" class="btn-out" onclick="fichar('SALIDA')">Confirmar SALIDA</button>
+        
+        <p id="mensajeFichaje" style="margin-top: 15px; font-weight: bold;"></p>
+
+        <div class="historial-container">
+            <strong style="color: #666;">Actividad reciente:</strong>
+            <ul id="listaFichajes" class="historial-lista">
+                </ul>
+        </div>
+
+        <button onclick="location.reload()" style="background:none; color: gray; font-size: 11px; margin-top: 10px;">Cerrar Sesión</button>
+    </div>
+
+    <script>
+        let empleadoValidado = "";
+
+        setInterval(() => {
+            const ahora = new Date();
+            document.getElementById('relojDigital').innerText = ahora.toLocaleTimeString();
+            if(!document.getElementById('fechaFichaje').value){
+                document.getElementById('fechaFichaje').value = ahora.toISOString().split('T')[0];
+                document.getElementById('horaFichaje').value = ahora.toTimeString().split(' ')[0].substring(0,5);
+            }
+        }, 1000);
+
+        function actualizarBotones(ultimoTipo) {
+            const btnIn = document.getElementById('btnEntrada');
+            const btnOut = document.getElementById('btnSalida');
+            if (ultimoTipo === 'ENTRADA') {
+                btnIn.disabled = true;
+                btnOut.disabled = false;
+            } else {
+                btnIn.disabled = false;
+                btnOut.disabled = true;
+            }
+        }
+
+        // Nueva función para cargar la lista desde la API
+        async function cargarHistorial() {
+            try {
+                const response = await fetch('/api/fichajes/historial/' + empleadoValidado);
+                if (response.ok) {
+                    const fichajes = await response.json();
+                    const lista = document.getElementById('listaFichajes');
+                    lista.innerHTML = ""; 
+
+                    // Mostramos los últimos 5 fichajes (invertimos el array para ver lo más nuevo arriba)
+                    fichajes.reverse().slice(0, 5).forEach(f => {
+                        const item = document.createElement('li');
+                        item.className = "historial-item";
+                        const icon = f.tipo === 'ENTRADA' ? '🟢' : '🔴';
+                        const horaCorta = new Date(f.fechaHora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        
+                        item.innerHTML = `<span>${icon} ${f.tipo}</span> <span style="color: #888;">${horaCorta}</span>`;
+                        lista.appendChild(item);
+                    });
+                }
+            } catch (e) { console.error("Error cargando historial", e); }
+        }
+
+        async function validarAcceso() {
+            const id = document.getElementById('idEmpleado').value;
+            const pass = document.getElementById('passEmpleado').value;
+
+            const response = await fetch('/api/fichajes/validar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ empleadoId: id, password: pass })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                empleadoValidado = id;
+                document.getElementById('saludo').innerText = "Hola, " + data.nombre;
+                document.getElementById('seccionLogin').style.display = 'none';
+                document.getElementById('seccionFichaje').style.display = 'block';
+                
+                actualizarBotones(data.ultimoTipo);
+                cargarHistorial(); // Cargamos el historial al entrar
+            } else {
+                document.getElementById('errorLogin').innerText = "Usuario o contraseña incorrectos";
+            }
+        }
+
+        async function fichar(tipo) {
+            const fecha = document.getElementById('fechaFichaje').value;
+            const hora = document.getElementById('horaFichaje').value;
+            
+            const response = await fetch('/api/fichajes/confirmar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    empleadoId: empleadoValidado, 
+                    tipo: tipo,
+                    fechaHoraManual: fecha + "T" + hora + ":00" 
+                })
+            });
+
+            if (response.ok) {
+                const res = await response.text();
+                document.getElementById('mensajeFichaje').innerText = res;
+                document.getElementById('mensajeFichaje').style.color = (tipo === 'ENTRADA') ? "green" : "red";
+                
+                actualizarBotones(tipo); 
+                cargarHistorial(); // Actualizamos la lista tras el nuevo fichaje
+            } else {
+                document.getElementById('mensajeFichaje').innerText = "Error al guardar el fichaje";
+            }
+        }
+    </script>
+</body>
+</html>
