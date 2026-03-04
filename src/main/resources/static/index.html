@@ -176,7 +176,7 @@
                     
                     fichajes.reverse().forEach(f => {
                         const fila = `<tr>
-                            <td>${f.dniEmpleado}</td>
+                            <td>${f.empleadoId}</td>
                             <td style="color: ${f.tipo === 'ENTRADA' ? 'green' : 'red'}"><strong>${f.tipo}</strong></td>
                             <td>${new Date(f.fechaHora).toLocaleString()}</td>
                         </tr>`;
@@ -209,7 +209,6 @@
                 document.getElementById('seccionLogin').style.display = 'none';
 
                 // LÓGICA DE DECISIÓN: ¿Es jefe o empleado?
-                // He añadido toLowerCase() para que funcione pongas 'jefe' o 'JEFE' en la base de datos
                 if (data.rol && data.rol.toLowerCase() === 'jefe') {
                     // Muestra la pantalla especial de JEFE
                     document.getElementById('seccionJefe').style.display = 'block';
