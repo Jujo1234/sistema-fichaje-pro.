@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>Sistema de Fichaje Profesional</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; text-align: center; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 400px; text-align: center; margin: 20px; }
         input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; margin-top: 10px; }
         .btn-primary { background: #007bff; color: white; }
@@ -19,8 +19,13 @@
             opacity: 0.6;
         }
 
-        #seccionFichaje, #seccionJefe { display: none; } /* Escondemos las secciones nuevas al principio */
+        #seccionFichaje, #seccionJefe, #listaGlobalContainer { display: none; } /* Escondemos las secciones nuevas al principio */
         .reloj { font-size: 24px; font-weight: bold; color: #333; margin: 15px 0; }
+
+        /* Estilos para la tabla del Jefe */
+        .tabla-fichajes { width: 100%; margin-top: 20px; border-collapse: collapse; font-size: 13px; }
+        .tabla-fichajes th, .tabla-fichajes td { border: 1px solid #eee; padding: 10px; text-align: left; }
+        .tabla-fichajes th { background-color: #f8f9fa; color: #333; }
 
         .historial-container { margin-top: 20px; text-align: left; border-top: 1px solid #eee; padding-top: 10px; }
         .historial-lista { list-style: none; padding: 0; font-size: 13px; max-height: 150px; overflow-y: auto; }
@@ -59,12 +64,26 @@
         <button onclick="location.reload()" style="background:none; color: gray; font-size: 11px; margin-top: 10px;">Cerrar Sesión</button>
     </div>
 
-    <div id="seccionJefe" class="card">
+    <div id="seccionJefe" class="card" style="width: 500px;">
         <h2 style="color: #007bff;">Panel de Control</h2>
         <p>Bienvenido, <strong>Jefe de Planta</strong>.</p>
         <p style="font-size: 14px; color: #666;">Desde aquí puedes supervisar los fichajes de toda la empresa.</p>
         
-        <button class="btn-primary" onclick="alert('Generando informe global...')">Ver Fichajes de Empleados</button>
+        <button class="btn-primary" onclick="verFichajesGlobales()">Ver Fichajes de Empleados</button>
+        
+        <div id="listaGlobalContainer">
+            <table class="tabla-fichajes">
+                <thead>
+                    <tr>
+                        <th>Empleado</th>
+                        <th>Acción</th>
+                        <th>Fecha y Hora</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaGlobalBody"></tbody>
+            </table>
+        </div>
+
         <button onclick="location.reload()" style="background:#666; color: white; margin-top: 20px;">Cerrar Sesión Jefe</button>
     </div>
 
@@ -146,6 +165,28 @@
             } catch (e) { console.error("Error cargando historial", e); }
         }
 
+        // Nueva función para que el JEFE vea los fichajes de todos
+        async function verFichajesGlobales() {
+            try {
+                const response = await fetch('/api/fichajes/todos');
+                if (response.ok) {
+                    const fichajes = await response.json();
+                    const body = document.getElementById('tablaGlobalBody');
+                    body.innerHTML = ""; 
+                    
+                    fichajes.reverse().forEach(f => {
+                        const fila = `<tr>
+                            <td>${f.dniEmpleado}</td>
+                            <td style="color: ${f.tipo === 'ENTRADA' ? 'green' : 'red'}"><strong>${f.tipo}</strong></td>
+                            <td>${new Date(f.fechaHora).toLocaleString()}</td>
+                        </tr>`;
+                        body.innerHTML += fila;
+                    });
+                    document.getElementById('listaGlobalContainer').style.display = 'block';
+                }
+            } catch (e) { alert("Error al conectar con el servidor"); }
+        }
+
         async function validarAcceso() {
         	// Lee el DNI escrito
             const id = document.getElementById('idEmpleado').value;
@@ -168,7 +209,8 @@
                 document.getElementById('seccionLogin').style.display = 'none';
 
                 // LÓGICA DE DECISIÓN: ¿Es jefe o empleado?
-                if (data.rol === 'jefe') {
+                // He añadido toLowerCase() para que funcione pongas 'jefe' o 'JEFE' en la base de datos
+                if (data.rol && data.rol.toLowerCase() === 'jefe') {
                     // Muestra la pantalla especial de JEFE
                     document.getElementById('seccionJefe').style.display = 'block';
                 } else {
