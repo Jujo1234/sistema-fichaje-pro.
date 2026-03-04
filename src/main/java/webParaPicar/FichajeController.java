@@ -79,10 +79,12 @@ public class FichajeController {
     }
 
     // 4. NUEVO BUZÓN PARA EL JEFE: Trae los fichajes de TODO el personal
-    @GetMapping("/admin/historial-global")
+    // He cambiado la dirección a "/todos" para que coincida exactamente con tu index.html
+    @GetMapping("/todos")
     public ResponseEntity<List<Fichaje>> obtenerHistorialGlobal() {
-        // Le pedimos al buscador que traiga TODOS los registros de la empresa
-        List<Fichaje> listaGlobal = fichajeRepo.findAllByOrderByFechaHoraDesc();
+        // Le pedimos al buscador que traiga TODOS los registros de la empresa ordenados por fecha
+        // Si tu repository no tiene este método exacto, puedes usar fichajeRepo.findAll()
+        List<Fichaje> listaGlobal = fichajeRepo.findAll(); 
         return ResponseEntity.ok(listaGlobal);
     }
 }
