@@ -1,50 +1,43 @@
 package webParaPicar;
 
-
 /*
- ESTA CLASE ES LA MAQUETA DE LOS DATOS
- - Su funcion es decirle a java y a tu base de datos que informacion vamos a guardar de cada fichaje y como debe ser la tabala 
+ ESTA CLASE ES EL MODELO DE UN FICHAJE.
+ - Representa una fila de la tabla "fichajes" en tu MySQL.
+ - Guarda quién picó, si entró o salió y en qué momento exacto.
  */
-
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-/*
- @Entity: Le dice a Spring boot: "Esta clase no es solo para guardar datos en memoria, es una tabla de la base de datos"
- @Table(name = "fichajes"): Le da el nombre a la tabla en MySQL
- @Id: Indican que el campo id es la llave primaria.
-  @GeneratedValue(...): Hace que el numero suba solo (1,2,3), cada vez que alguien ficha, para que nunca se repita
- */
-
 @Entity
-@Table(name = "fichajes")
+@Table(name = "fichajes") // Conecta con tu tabla de MySQL
 public class Fichaje {
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	private String empleadoId;
-	private LocalDateTime fechaHora;
-	private String tipo; // Asegúrate de que empieza con minúscula
-	
-	public Fichaje() {
-	}
 
-	// Solo necesitamos UN constructor de este tipo
-	public Fichaje(String empleadoId, String tipo) {
-		this.empleadoId = empleadoId;
-		this.tipo = tipo;
-		this.fechaHora = LocalDateTime.now(); // Esto hac e que se ponga la hora actual
-	}
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
-	public Long getId() { return id; }
-	public void setId(Long id) { this.id = id; }
-	public String getEmpleadoId() { return empleadoId; }
-	public void setEmpleadoId(String empleadoId) { this.empleadoId = empleadoId; }
-	public LocalDateTime getFechaHora() { return fechaHora; }
-	public void setFechaHora(LocalDateTime fechaHora) { this.fechaHora = fechaHora; }
-	public String getTipo() { return tipo; }
-	public void setTipo(String tipo) { this.tipo = tipo; }
+    @Column(name = "dni_empleado") // <--- IMPORTANTE: Coincide con tu SQL
+    private String empleadoId;
+
+    private String tipo; // Guardará "ENTRADA" o "SALIDA"
+
+    @Column(name = "fecha_hora") // <--- IMPORTANTE: Coincide con tu SQL
+    private LocalDateTime fechaHora;
+
+    // Constructor vacío (Obligatorio para Java)
+    public Fichaje() {}
+
+    // Getters y Setters (Los "permisos" para leer y escribir datos)
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
+
+    public String getEmpleadoId() { return empleadoId; }
+    public void setEmpleadoId(String empleadoId) { this.empleadoId = empleadoId; }
+
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
+
+    public LocalDateTime getFechaHora() { return fechaHora; }
+    public void setFechaHora(LocalDateTime fechaHora) { this.fechaHora = fechaHora; }
 }

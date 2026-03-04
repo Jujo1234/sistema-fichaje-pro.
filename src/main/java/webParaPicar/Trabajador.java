@@ -12,15 +12,17 @@ public class Trabajador {
     private String dni;
     private String nombre;
     private String password;
+    private String rol; // Nuevo campo para diferenciar jefe de empleado
 
     // Constructor vacío (obligatorio para Java)
     public Trabajador() {}
 
     // Constructor para crear trabajadores
-    public Trabajador(String dni, String nombre, String password) {
+    public Trabajador(String dni, String nombre, String password, String rol) {
         this.dni = dni;
         this.nombre = nombre;
         this.password = password;
+        this.rol = rol;
     }
 
     // Getters y Setters (los "permisos" para leer los datos)
@@ -32,4 +34,7 @@ public class Trabajador {
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+
+    public String getRol() { return rol; } // Permiso para leer el rol
+    public void setRol(String rol) { this.rol = rol; } // Permiso para cambiar el rol
 }
