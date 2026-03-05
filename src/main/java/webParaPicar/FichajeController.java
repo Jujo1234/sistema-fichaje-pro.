@@ -5,6 +5,7 @@ package webParaPicar;
  - Valida quién entra y qué permisos tiene (Rol).
  - Guarda los fichajes nuevos en la base de datos.
  - Entrega el historial personal a los empleados y el global al jefe.
+ - Permite al jefe gestionar el personal (Alta/Baja).
  */
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,19 +81,16 @@ public class FichajeController {
         return ResponseEntity.ok(lista);
     }
 
-    // 4. NUEVO BUZÓN PARA EL JEFE: Trae los fichajes con el nombre del empleado
+    // 4. BUZÓN GLOBAL (JEFE): Trae los fichajes con el nombre del empleado
     @GetMapping("/todos")
     public ResponseEntity<List<Map<String, Object>>> obtenerHistorialGlobal() {
-        // Le pedimos al buscador que traiga TODOS los registros de la empresa
         List<Fichaje> listaGlobal = fichajeRepo.findAll();
         List<Map<String, Object>> respuesta = new ArrayList<>();
 
         for (Fichaje f : listaGlobal) {
-            // Buscamos el nombre del trabajador usando su ID de fichaje
             Optional<Trabajador> t = trabajadorRepo.findById(f.getEmpleadoId());
-            String nombre = t.isPresent() ? t.get().getNombre() : "Desconocido";
+            String nombre = t.isPresent() ? t.get().getNombre() : "Empleado Eliminado";
 
-            // Creamos un paquete de datos que incluya el nombre para la tabla del jefe
             Map<String, Object> dato = new HashMap<>();
             dato.put("empleadoId", f.getEmpleadoId());
             dato.put("nombreEmpleado", nombre);
@@ -101,5 +99,27 @@ public class FichajeController {
             respuesta.add(dato);
         }
         return ResponseEntity.ok(respuesta);
+    }
+
+    // 5. NUEVO: REGISTRAR TRABAJADOR (Alta)
+    @PostMapping("/admin/registrar-trabajador")
+    public ResponseEntity<String> registrar(@RequestBody Trabajador nuevo) {
+        try {
+            trabajadorRepo.save(nuevo);
+            return ResponseEntity.ok("Empleado registrado correctamente");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
+    }
+
+    // 6. NUEVO: ELIMINAR TRABAJADOR (Baja)
+    @DeleteMapping("/admin/eliminar-trabajador/{id}")
+    public ResponseEntity<String> eliminar(@PathVariable String id) {
+        try {
+            trabajadorRepo.deleteById(id);
+            return ResponseEntity.ok("Empleado eliminado");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
     }
 }
