@@ -12,17 +12,10 @@
         .btn-in { background: #28a745; color: white; }
         .btn-out { background: #dc3545; color: white; }
         
-        button:disabled {
-            background-color: #cccccc !important;
-            color: #666666 !important;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        #seccionFichaje, #seccionJefe, #listaGlobalContainer { display: none; } /* Escondemos las secciones nuevas al principio */
+        button:disabled { background-color: #cccccc !important; color: #666666 !important; cursor: not-allowed; opacity: 0.6; }
+        #seccionFichaje, #seccionJefe, #listaGlobalContainer { display: none; }
         .reloj { font-size: 24px; font-weight: bold; color: #333; margin: 15px 0; }
 
-        /* Estilos para la tabla del Jefe */
         .tabla-fichajes { width: 100%; margin-top: 20px; border-collapse: collapse; font-size: 13px; }
         .tabla-fichajes th, .tabla-fichajes td { border: 1px solid #eee; padding: 10px; text-align: left; }
         .tabla-fichajes th { background-color: #f8f9fa; color: #333; }
@@ -60,14 +53,12 @@
             <strong style="color: #666;">Actividad reciente:</strong>
             <ul id="listaFichajes" class="historial-lista"></ul>
         </div>
-
         <button onclick="location.reload()" style="background:none; color: gray; font-size: 11px; margin-top: 10px;">Cerrar Sesión</button>
     </div>
 
-    <div id="seccionJefe" class="card" style="width: 500px;">
+    <div id="seccionJefe" class="card" style="width: 550px;">
         <h2 style="color: #007bff;">Panel de Control</h2>
         <p>Bienvenido, <strong>Jefe de Planta</strong>.</p>
-        <p style="font-size: 14px; color: #666;">Desde aquí puedes supervisar los fichajes de toda la empresa.</p>
         
         <button class="btn-primary" onclick="verFichajesGlobales()">Ver Fichajes de Empleados</button>
         
@@ -75,7 +66,8 @@
             <table class="tabla-fichajes">
                 <thead>
                     <tr>
-                        <th>Empleado</th>
+                        <th>DNI</th>
+                        <th>Nombre</th>
                         <th>Acción</th>
                         <th>Fecha y Hora</th>
                     </tr>
@@ -88,84 +80,50 @@
     </div>
 
     <script>
-    // Crea una caja vacia para guardar el dni del empleado una vez que sepamos quien es
         let empleadoValidado = "";
 
-    // Reloj en tiempo real
-    // setInterval(() => { ... }, 1000);: Inicia un cronometro que repite lo que hay dentro cada 1000 milisegundos(1 Segundo)
+        // Reloj en tiempo real
         setInterval(() => {
-        	// Crea un objeto con la fecha y hora exacta de este preciso instante
             const ahora = new Date();
-        	// Busca en el html el elemnto con ID relojDigital y le escribe la hora(ej: "10:05:30")
             const rd = document.getElementById('relojDigital');
             if(rd) rd.innerText = ahora.toLocaleTimeString();
 
-        	// Lo que esta dentro del parentesis de if pregunta si esta vacio el cuadro de la fecha, si es que si ejecuta lo siguiente
             if(document.getElementById('fechaFichaje') && !document.getElementById('fechaFichaje').value){
-            	// Esta linea coge coge la fecha completa, la corta solo parav dejar "AAAA-MM-DD" y la pone automaticamente en el calendario web
                 document.getElementById('fechaFichaje').value = ahora.toISOString().split('T')[0];
-                // Esta linea hace lo mismo con la hora, cortandola para que solo aparezcan horas en minutos(ej: "10.05")
-            	document.getElementById('horaFichaje').value = ahora.toTimeString().split(' ')[0].substring(0,5);
+                document.getElementById('horaFichaje').value = ahora.toTimeString().split(' ')[0].substring(0,5);
             }
         }, 1000);
 
-    // Define una funcion que recibe cual fue el ultimo movimiento del empleado
         function actualizarBotones(ultimoTipo) {
-    	// Guarda el boton de Entrada en una variable
             const btnIn = document.getElementById('btnEntrada');
-    	// Guarda el boton de salida en una variable
             const btnOut = document.getElementById('btnSalida');
-            
             if(!btnIn || !btnOut) return;
-
-    	// Si el empleado ya entro...
             if (ultimoTipo === 'ENTRADA') {
-            	// Bloquea el boton de entrada(Se pone en gris)
-                btnIn.disabled = true;
-            	// Activa el boton de salida
-                btnOut.disabled = false;
-            	// Si el ultimo fue Salida(o no hay ninguno), hace lo contrario: Activa la entrada y bloquea la salida
+                btnIn.disabled = true; btnOut.disabled = false;
             } else {
-                btnIn.disabled = false;
-                btnOut.disabled = true;
+                btnIn.disabled = false; btnOut.disabled = true;
             }
         }
 
-        // Nueva función para cargar la lista desde la API
-        // Define una funcion asincrona(Que espera respuestas de internet) para traer la lista de fichajes
         async function cargarHistorial() {
             try {
-            	// Llama a tu servidor java en railway pidiendo los fichajes de ese DNI especifico
                 const response = await fetch('/api/fichajes/historial/' + empleadoValidado);
-                // Si el servidor responde que esta todo bien
-            	if (response.ok) {
-            		// Convierte la respuesta en una lista de objetos que JavaScrpt entiende
+                if (response.ok) {
                     const fichajes = await response.json();
-            		// Busca el lugar donde se dibujara la lista(un <ul> en el HTML)
                     const lista = document.getElementById('listaFichajes');
-            		// Borra lo que hubiera antes para no repetir datos
                     lista.innerHTML = ""; 
-
-                    // Mostramos los últimos 5 fichajes (invertimos el array para ver lo más nuevo arriba)
                     fichajes.reverse().slice(0, 5).forEach(f => {
-                    	// Crea un nuevo punto de lista de la nada
                         const item = document.createElement('li');
-                    	// Le pone una clase CSS para que se vea bonito
                         item.className = "historial-item";
-                    	// Si es de entrada pone un punto verde, si no, uno rojo
                         const icon = f.tipo === 'ENTRADA' ? '🟢' : '🔴';
-                    	// Formatea la fecha de la base de datos para que solo se vean horas y minutos
                         const horaCorta = new Date(f.fechaHora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        // Mete el icono, el tipo y la hora dentro del punto de lista
                         item.innerHTML = `<span>${icon} ${f.tipo}</span> <span style="color: #888;">${horaCorta}</span>`;
-                        // Pega ese nuevo punto en la lista de la pantalla
                         lista.appendChild(item);
                     });
                 }
             } catch (e) { console.error("Error cargando historial", e); }
         }
 
-        // Nueva función para que el JEFE vea los fichajes de todos
         async function verFichajesGlobales() {
             try {
                 const response = await fetch('/api/fichajes/todos');
@@ -177,6 +135,7 @@
                     fichajes.reverse().forEach(f => {
                         const fila = `<tr>
                             <td>${f.empleadoId}</td>
+                            <td><strong>${f.nombreEmpleado}</strong></td>
                             <td style="color: ${f.tipo === 'ENTRADA' ? 'green' : 'red'}"><strong>${f.tipo}</strong></td>
                             <td>${new Date(f.fechaHora).toLocaleString()}</td>
                         </tr>`;
@@ -188,37 +147,26 @@
         }
 
         async function validarAcceso() {
-        	// Lee el DNI escrito
             const id = document.getElementById('idEmpleado').value;
-        	// Lee la contraseña escrita
             const pass = document.getElementById('passEmpleado').value;
 
-        	// Envia una peticion POST al servidor Java con el DNI y la contraseña en un paquete JSON
             const response = await fetch('/api/fichajes/validar', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ empleadoId: id, password: pass })
             });
 
-        	// Si el login es correcto
             if (response.ok) {
                 const data = await response.json();
                 empleadoValidado = id;
-
-                // Esconde el formulario de login para todos
                 document.getElementById('seccionLogin').style.display = 'none';
 
-                // LÓGICA DE DECISIÓN: ¿Es jefe o empleado?
                 if (data.rol && data.rol.toLowerCase() === 'jefe') {
-                    // Muestra la pantalla especial de JEFE
                     document.getElementById('seccionJefe').style.display = 'block';
                 } else {
-                    // Muestra la pantalla con los bloques de fichar para el EMPLEADO
                     document.getElementById('saludo').innerText = "Hola, " + data.nombre;
                     document.getElementById('seccionFichaje').style.display = 'block';
-                    // Mira si el empleado ya estaba dentro o fuera para activar el boton correcto
                     actualizarBotones(data.ultimoTipo);
-                    // Llama a la funcion anterior para mostrar los ultimos fichajes
                     cargarHistorial(); 
                 }
             } else {
@@ -226,17 +174,13 @@
             }
         }
 
-        // Funcion que se activa al darle a "Entrada" o "Salida"
         async function fichar(tipo) {
-        	// Lee lo que pone en el cuadro de fecha
             const fecha = document.getElementById('fechaFichaje').value;
-        	// Lee lo que pone en el cuadro de hora
             const hora = document.getElementById('horaFichaje').value;
             
             const response = await fetch('/api/fichajes/confirmar', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                // Envía el paquete al servidor Java
                 body: JSON.stringify({ 
                     empleadoId: empleadoValidado, 
                     tipo: tipo,
@@ -247,12 +191,9 @@
             if (response.ok) {
                 const res = await response.text();
                 document.getElementById('mensajeFichaje').innerText = res;
-                // Pone el texto verde si entra o rojo si sale
                 document.getElementById('mensajeFichaje').style.color = (tipo === 'ENTRADA') ? "green" : "red";
-                
-                // Bloquea el boton que acabas de pulsar
                 actualizarBotones(tipo); 
-                cargarHistorial(); // Actualizamos la lista tras el nuevo fichaje
+                cargarHistorial(); 
             } else {
                 document.getElementById('mensajeFichaje').innerText = "Error al guardar el fichaje";
             }

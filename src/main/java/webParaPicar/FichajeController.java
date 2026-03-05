@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -78,13 +80,26 @@ public class FichajeController {
         return ResponseEntity.ok(lista);
     }
 
-    // 4. NUEVO BUZÓN PARA EL JEFE: Trae los fichajes de TODO el personal
-    // He cambiado la dirección a "/todos" para que coincida exactamente con tu index.html
+    // 4. NUEVO BUZÓN PARA EL JEFE: Trae los fichajes con el nombre del empleado
     @GetMapping("/todos")
-    public ResponseEntity<List<Fichaje>> obtenerHistorialGlobal() {
-        // Le pedimos al buscador que traiga TODOS los registros de la empresa ordenados por fecha
-        // Si tu repository no tiene este método exacto, puedes usar fichajeRepo.findAll()
-        List<Fichaje> listaGlobal = fichajeRepo.findAll(); 
-        return ResponseEntity.ok(listaGlobal);
+    public ResponseEntity<List<Map<String, Object>>> obtenerHistorialGlobal() {
+        // Le pedimos al buscador que traiga TODOS los registros de la empresa
+        List<Fichaje> listaGlobal = fichajeRepo.findAll();
+        List<Map<String, Object>> respuesta = new ArrayList<>();
+
+        for (Fichaje f : listaGlobal) {
+            // Buscamos el nombre del trabajador usando su ID de fichaje
+            Optional<Trabajador> t = trabajadorRepo.findById(f.getEmpleadoId());
+            String nombre = t.isPresent() ? t.get().getNombre() : "Desconocido";
+
+            // Creamos un paquete de datos que incluya el nombre para la tabla del jefe
+            Map<String, Object> dato = new HashMap<>();
+            dato.put("empleadoId", f.getEmpleadoId());
+            dato.put("nombreEmpleado", nombre);
+            dato.put("tipo", f.getTipo());
+            dato.put("fechaHora", f.getFechaHora());
+            respuesta.add(dato);
+        }
+        return ResponseEntity.ok(respuesta);
     }
 }
