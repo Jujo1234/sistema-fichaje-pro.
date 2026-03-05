@@ -49,7 +49,7 @@ public class FichajeController {
                 "ultimoTipo", estado
             ));
         }
-        // Si fallan los datos, mandamos error 401 (No autorizado)
+        // IMPORTANTE: Si llegamos aquí, enviamos error 401 para que la web muestre "Usuario no registrado"
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario o contraseña incorrectos");
     }
 
@@ -101,18 +101,18 @@ public class FichajeController {
         return ResponseEntity.ok(respuesta);
     }
 
-    // 5. NUEVO: REGISTRAR TRABAJADOR (Alta)
+    // 5. REGISTRAR TRABAJADOR: Alta desde la web
     @PostMapping("/admin/registrar-trabajador")
     public ResponseEntity<String> registrar(@RequestBody Trabajador nuevo) {
         try {
             trabajadorRepo.save(nuevo);
-            return ResponseEntity.ok("Empleado registrado correctamente");
+            return ResponseEntity.ok("Empleado registrado");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
     }
 
-    // 6. NUEVO: ELIMINAR TRABAJADOR (Baja)
+    // 6. ELIMINAR TRABAJADOR: Baja desde la web
     @DeleteMapping("/admin/eliminar-trabajador/{id}")
     public ResponseEntity<String> eliminar(@PathVariable String id) {
         try {
