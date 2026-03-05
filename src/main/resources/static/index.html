@@ -11,6 +11,7 @@
         .btn-primary { background: #007bff; color: white; }
         .btn-in { background: #28a745; color: white; }
         .btn-out { background: #dc3545; color: white; }
+        .btn-excel { background: #1d6f42; color: white; display: none; } /* Estilo para el botón de Excel */
         
         button:disabled { background-color: #cccccc !important; color: #666666 !important; cursor: not-allowed; opacity: 0.6; }
         #seccionFichaje, #seccionJefe, #listaGlobalContainer { display: none; }
@@ -23,6 +24,8 @@
         .historial-container { margin-top: 20px; text-align: left; border-top: 1px solid #eee; padding-top: 10px; }
         .historial-lista { list-style: none; padding: 0; font-size: 13px; max-height: 150px; overflow-y: auto; }
         .historial-item { padding: 5px 0; border-bottom: 1px solid #f9f9f9; display: flex; justify-content: space-between; }
+        
+        .flex-buttons { display: flex; gap: 10px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -60,10 +63,13 @@
         <h2 style="color: #007bff;">Panel de Control</h2>
         <p>Bienvenido, <strong>Jefe de Planta</strong>.</p>
         
-        <button class="btn-primary" onclick="verFichajesGlobales()">Ver Fichajes de Empleados</button>
+        <div class="flex-buttons">
+            <button class="btn-primary" onclick="verFichajesGlobales()">Ver Fichajes de Empleados</button>
+            <button id="btnExcel" class="btn-excel" onclick="exportarExcel()">Descargar Excel</button>
+        </div>
         
         <div id="listaGlobalContainer">
-            <table class="tabla-fichajes">
+            <table class="tabla-fichajes" id="tablaParaExportar">
                 <thead>
                     <tr>
                         <th>DNI</th>
@@ -142,8 +148,28 @@
                         body.innerHTML += fila;
                     });
                     document.getElementById('listaGlobalContainer').style.display = 'block';
+                    document.getElementById('btnExcel').style.display = 'block'; // Mostramos el botón de Excel
                 }
             } catch (e) { alert("Error al conectar con el servidor"); }
+        }
+
+        // Nueva función para descargar la tabla en formato Excel (.xls)
+        function exportarExcel() {
+            const tabla = document.getElementById("tablaParaExportar");
+            const nombreArchivo = "Reporte_Fichajes.xls";
+            
+            // Creamos el contenido para que Excel lo interprete correctamente
+            const meta = '<meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">';
+            const html = meta + tabla.outerHTML;
+            
+            const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = nombreArchivo;
+            link.click();
+            URL.revokeObjectURL(url);
         }
 
         async function validarAcceso() {
