@@ -77,7 +77,7 @@ public class FichajeController {
             Optional<Trabajador> t = trabajadorRepo.findById(f.getEmpleadoId());
             Map<String, Object> dato = new HashMap<>();
             dato.put("empleadoId", f.getEmpleadoId());
-            dato.put("nombreEmpleado", t.isPresent() ? t.get().getNombre() : "Eliminado");
+            dato.put("nombreEmpleado", t.isPresent() ? t.get().getNombre() : "Empleado Eliminado");
             dato.put("tipo", f.getTipo());
             dato.put("fechaHora", f.getFechaHora());
             respuesta.add(dato);
@@ -85,21 +85,29 @@ public class FichajeController {
         return ResponseEntity.ok(respuesta);
     }
 
-    // 5. REGISTRAR TRABAJADOR (Para el formulario de Alta)
+    // 5. REGISTRAR TRABAJADOR: Con validación de DNI duplicado
     @PostMapping("/admin/registrar-trabajador")
     public ResponseEntity<String> registrar(@RequestBody Trabajador nuevo) {
+        // Verificamos si ya existe el DNI
+        if (trabajadorRepo.existsById(nuevo.getDni())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Ese DNI ya está registrado");
+        }
         trabajadorRepo.save(nuevo);
-        return ResponseEntity.ok("Empleado registrado");
+        return ResponseEntity.ok("Empleado añadido");
     }
 
-    // 6. ELIMINAR TRABAJADOR (Baja desde la lista de gestión)
+    // 6. ELIMINAR TRABAJADOR
     @DeleteMapping("/admin/eliminar-trabajador/{id}")
     public ResponseEntity<String> eliminar(@PathVariable String id) {
-        trabajadorRepo.deleteById(id);
-        return ResponseEntity.ok("Empleado eliminado");
+        try {
+            trabajadorRepo.deleteById(id);
+            return ResponseEntity.ok("Empleado eliminado");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
     }
 
-    // 7. LISTADO DE PERSONAL: Para que el jefe vea quiénes están en plantilla
+    // 7. LISTADO DE PERSONAL
     @GetMapping("/admin/lista-trabajadores")
     public ResponseEntity<List<Trabajador>> listarTodos() {
         return ResponseEntity.ok(trabajadorRepo.findAll());

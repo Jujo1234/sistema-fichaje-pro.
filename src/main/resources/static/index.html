@@ -12,7 +12,7 @@
         .btn-in { background: #28a745; color: white; }
         .btn-out { background: #dc3545; color: white; }
         .btn-excel { background: #1d6f42; color: white; display: none; }
-        .btn-manage { background: #6f42c1; color: white; } /* Color púrpura para gestión */
+        .btn-manage { background: #6f42c1; color: white; }
         
         button:disabled { background-color: #cccccc !important; cursor: not-allowed; opacity: 0.6; }
         #seccionFichaje, #seccionJefe, #listaGlobalContainer, #listaEmpleadosContainer { display: none; }
@@ -22,6 +22,7 @@
         .tabla-fichajes th, .tabla-fichajes td { border: 1px solid #eee; padding: 8px; text-align: left; }
         .tabla-fichajes th { background-color: #f8f9fa; }
         .form-admin { margin-top: 25px; padding-top: 20px; border-top: 2px solid #f0f2f5; text-align: left; }
+        #mensajeAdmin { font-weight: bold; margin-bottom: 10px; display: block; }
     </style>
 </head>
 <body>
@@ -67,6 +68,7 @@
 
         <div id="listaEmpleadosContainer">
             <h3 style="color: #6f42c1; margin-top: 20px;">Plantilla de Trabajadores</h3>
+            <span id="mensajeBorrado" style="display:block; margin: 10px 0; font-weight: bold;"></span>
             <table class="tabla-fichajes">
                 <thead><tr><th>DNI</th><th>Nombre</th><th>Rol</th><th>Acción</th></tr></thead>
                 <tbody id="tablaEmpleadosBody"></tbody>
@@ -74,6 +76,7 @@
             
             <div class="form-admin">
                 <h3>Alta de Nuevo Empleado</h3>
+                <span id="mensajeAdmin"></span>
                 <input type="text" id="nuevoDni" placeholder="DNI">
                 <input type="text" id="nuevoNombre" placeholder="Nombre">
                 <input type="password" id="nuevoPass" placeholder="Clave">
@@ -154,20 +157,53 @@
         }
 
         async function eliminarEmpleado(id) {
-            if(confirm("¿Estás seguro de que quieres eliminar a " + id + " de la empresa?")) {
-                await fetch('/api/fichajes/admin/eliminar-trabajador/' + id, { method: 'DELETE' });
-                verListaEmpleados();
+            const msg = document.getElementById('mensajeBorrado');
+            if(confirm("¿Estás seguro de que quieres eliminar a " + id + "?")) {
+                const response = await fetch('/api/fichajes/admin/eliminar-trabajador/' + id, { method: 'DELETE' });
+                if (response.ok) {
+                    msg.innerText = "Empleado " + id + " eliminado correctamente";
+                    msg.style.color = "red";
+                    verListaEmpleados();
+                    setTimeout(() => msg.innerText = "", 3000);
+                }
             }
         }
 
         async function registrarNuevo() {
-            await fetch('/api/fichajes/admin/registrar-trabajador', {
+            const msg = document.getElementById('mensajeAdmin');
+            const dni = document.getElementById('nuevoDni').value;
+            const nombre = document.getElementById('nuevoNombre').value;
+            const pass = document.getElementById('nuevoPass').value;
+            const rol = document.getElementById('nuevoRol').value;
+
+            if(!dni || !nombre || !pass) {
+                msg.innerText = "Rellena todos los campos";
+                msg.style.color = "orange";
+                return;
+            }
+
+            const response = await fetch('/api/fichajes/admin/registrar-trabajador', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ dni: document.getElementById('nuevoDni').value, nombre: document.getElementById('nuevoNombre').value, password: document.getElementById('nuevoPass').value, rol: document.getElementById('nuevoRol').value })
+                body: JSON.stringify({ dni: dni, nombre: nombre, password: pass, rol: rol })
             });
-            alert("Empleado añadido");
-            verListaEmpleados();
+
+            if (response.ok) {
+                msg.innerText = "¡Empleado añadido correctamente!";
+                msg.style.color = "green";
+                // Limpiar campos
+                document.getElementById('nuevoDni').value = "";
+                document.getElementById('nuevoNombre').value = "";
+                document.getElementById('nuevoPass').value = "";
+                verListaEmpleados();
+            } else if (response.status === 409) {
+                msg.innerText = "Ese DNI ya está registrado";
+                msg.style.color = "red";
+            } else {
+                msg.innerText = "Error al registrar el empleado";
+                msg.style.color = "red";
+            }
+            setTimeout(() => msg.innerText = "", 3000);
         }
 
         function exportarExcel() {
