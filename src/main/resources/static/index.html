@@ -12,20 +12,16 @@
         .btn-in { background: #28a745; color: white; }
         .btn-out { background: #dc3545; color: white; }
         .btn-excel { background: #1d6f42; color: white; display: none; }
+        .btn-manage { background: #6f42c1; color: white; } /* Color púrpura para gestión */
         
         button:disabled { background-color: #cccccc !important; cursor: not-allowed; opacity: 0.6; }
-        #seccionFichaje, #seccionJefe, #listaGlobalContainer { display: none; }
+        #seccionFichaje, #seccionJefe, #listaGlobalContainer, #listaEmpleadosContainer { display: none; }
         .reloj { font-size: 24px; font-weight: bold; color: #333; margin: 15px 0; }
 
-        .tabla-fichajes { width: 100%; margin-top: 20px; border-collapse: collapse; font-size: 13px; }
-        .tabla-fichajes th, .tabla-fichajes td { border: 1px solid #eee; padding: 10px; text-align: left; }
-        .tabla-fichajes th { background-color: #f8f9fa; color: #333; }
-
-        .historial-container { margin-top: 20px; text-align: left; border-top: 1px solid #eee; padding-top: 10px; }
-        .historial-lista { list-style: none; padding: 0; font-size: 13px; max-height: 150px; overflow-y: auto; }
-        .historial-item { padding: 5px 0; border-bottom: 1px solid #f9f9f9; display: flex; justify-content: space-between; }
-        .flex-buttons { display: flex; gap: 10px; margin-top: 10px; }
-        .form-admin { margin-top: 30px; padding-top: 20px; border-top: 2px solid #f0f2f5; text-align: left; }
+        .tabla-fichajes { width: 100%; margin-top: 20px; border-collapse: collapse; font-size: 12px; }
+        .tabla-fichajes th, .tabla-fichajes td { border: 1px solid #eee; padding: 8px; text-align: left; }
+        .tabla-fichajes th { background-color: #f8f9fa; }
+        .form-admin { margin-top: 25px; padding-top: 20px; border-top: 2px solid #f0f2f5; text-align: left; }
     </style>
 </head>
 <body>
@@ -46,52 +42,47 @@
         <input type="time" id="horaFichaje">
         <button id="btnEntrada" class="btn-in" onclick="fichar('ENTRADA')">Confirmar ENTRADA</button>
         <button id="btnSalida" class="btn-out" onclick="fichar('SALIDA')">Confirmar SALIDA</button>
-        
         <p id="mensajeFichaje" style="margin-top: 15px; font-weight: bold;"></p>
-
         <div class="historial-container">
-            <ul id="listaFichajes" class="historial-lista"></ul>
+            <ul id="listaFichajes" style="list-style:none; padding:0; text-align:left; font-size:13px;"></ul>
         </div>
         <button onclick="location.reload()" style="background:none; color: gray; font-size: 11px;">Cerrar Sesión</button>
     </div>
 
-    <div id="seccionJefe" class="card" style="width: 650px;">
-        <h2 style="color: #007bff;">Panel de Control</h2>
-        <p>Bienvenido, <strong>Jefe de Planta</strong>.</p>
-        
-        <div class="flex-buttons">
-            <button class="btn-primary" onclick="verFichajesGlobales()">Ver Fichajes de Empleados</button>
-            <button id="btnExcel" class="btn-excel" onclick="exportarExcel()">Descargar Excel</button>
+    <div id="seccionJefe" class="card" style="width: 700px;">
+        <h2>Panel de Administración</h2>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button class="btn-primary" onclick="verFichajesGlobales()">Ver Fichajes</button>
+            <button class="btn-manage" onclick="verListaEmpleados()">Gestionar Personal</button>
+            <button id="btnExcel" class="btn-excel" onclick="exportarExcel()">Excel</button>
         </div>
 
         <div id="listaGlobalContainer">
+            <h3 style="color: #007bff; margin-top: 20px;">Historial de Movimientos</h3>
             <table class="tabla-fichajes" id="tablaParaExportar">
-                <thead>
-                    <tr>
-                        <th>DNI</th>
-                        <th>Nombre</th>
-                        <th>Acción</th>
-                        <th>Fecha y Hora</th>
-                        <th>Borrar</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>DNI</th><th>Nombre</th><th>Acción</th><th>Fecha/Hora</th></tr></thead>
                 <tbody id="tablaGlobalBody"></tbody>
             </table>
         </div>
 
-        <div class="form-admin">
-            <h3>Alta de Nuevo Empleado</h3>
-            <input type="text" id="nuevoDni" placeholder="DNI / ID">
-            <input type="text" id="nuevoNombre" placeholder="Nombre completo">
-            <input type="password" id="nuevoPass" placeholder="Contraseña">
-            <select id="nuevoRol">
-                <option value="empleado">Rol: Empleado</option>
-                <option value="jefe">Rol: Jefe</option>
-            </select>
-            <button class="btn-in" onclick="registrarNuevo()">Registrar en la Base de Datos</button>
+        <div id="listaEmpleadosContainer">
+            <h3 style="color: #6f42c1; margin-top: 20px;">Plantilla de Trabajadores</h3>
+            <table class="tabla-fichajes">
+                <thead><tr><th>DNI</th><th>Nombre</th><th>Rol</th><th>Acción</th></tr></thead>
+                <tbody id="tablaEmpleadosBody"></tbody>
+            </table>
+            
+            <div class="form-admin">
+                <h3>Alta de Nuevo Empleado</h3>
+                <input type="text" id="nuevoDni" placeholder="DNI">
+                <input type="text" id="nuevoNombre" placeholder="Nombre">
+                <input type="password" id="nuevoPass" placeholder="Clave">
+                <select id="nuevoRol"><option value="empleado">Empleado</option><option value="jefe">Jefe</option></select>
+                <button class="btn-in" onclick="registrarNuevo()">Añadir a Plantilla</button>
+            </div>
         </div>
 
-        <button onclick="location.reload()" style="background:#666; color: white; margin-top: 20px;">Cerrar Sesión Jefe</button>
+        <button onclick="location.reload()" style="background:#666; color: white; margin-top: 30px;">Cerrar Sesión Jefe</button>
     </div>
 
     <script>
@@ -99,21 +90,16 @@
 
         setInterval(() => {
             const ahora = new Date();
-            const rd = document.getElementById('relojDigital');
-            if(rd) rd.innerText = ahora.toLocaleTimeString();
+            if(document.getElementById('relojDigital')) document.getElementById('relojDigital').innerText = ahora.toLocaleTimeString();
             if(document.getElementById('fechaFichaje') && !document.getElementById('fechaFichaje').value){
                 document.getElementById('fechaFichaje').value = ahora.toISOString().split('T')[0];
                 document.getElementById('horaFichaje').value = ahora.toTimeString().split(' ')[0].substring(0,5);
             }
         }, 1000);
 
-        // LOGIN CON MENSAJE DE ERROR
         async function validarAcceso() {
             const id = document.getElementById('idEmpleado').value;
             const pass = document.getElementById('passEmpleado').value;
-            const errorLabel = document.getElementById('errorLogin');
-            errorLabel.innerText = "";
-
             const response = await fetch('/api/fichajes/validar', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -124,7 +110,7 @@
                 const data = await response.json();
                 empleadoValidado = id;
                 document.getElementById('seccionLogin').style.display = 'none';
-                if (data.rol && data.rol.toLowerCase() === 'jefe') {
+                if (data.rol.toLowerCase() === 'jefe') {
                     document.getElementById('seccionJefe').style.display = 'block';
                 } else {
                     document.getElementById('saludo').innerText = "Hola, " + data.nombre;
@@ -133,109 +119,95 @@
                     cargarHistorial();
                 }
             } else {
-                errorLabel.innerText = "Usuario o contraseña incorrectos";
-            }
-        }
-
-        // FICHAR CON MENSAJE EN COLOR
-        async function fichar(tipo) {
-            const fecha = document.getElementById('fechaFichaje').value;
-            const hora = document.getElementById('horaFichaje').value;
-            const mensajeLabel = document.getElementById('mensajeFichaje');
-            
-            const response = await fetch('/api/fichajes/confirmar', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ 
-                    empleadoId: empleadoValidado, 
-                    tipo: tipo,
-                    fechaHoraManual: fecha + "T" + hora + ":00" 
-                })
-            });
-
-            if (response.ok) {
-                mensajeLabel.innerText = "¡Fichaje de " + tipo + " guardado!";
-                mensajeLabel.style.color = (tipo === 'ENTRADA') ? "#28a745" : "#dc3545";
-                actualizarBotones(tipo);
-                cargarHistorial();
-            } else {
-                mensajeLabel.innerText = "Error al guardar fichaje";
-                mensajeLabel.style.color = "orange";
-            }
-        }
-
-        function actualizarBotones(ultimoTipo) {
-            const btnIn = document.getElementById('btnEntrada');
-            const btnOut = document.getElementById('btnSalida');
-            if(!btnIn || !btnOut) return;
-            btnIn.disabled = (ultimoTipo === 'ENTRADA');
-            btnOut.disabled = (ultimoTipo !== 'ENTRADA');
-        }
-
-        async function cargarHistorial() {
-            const response = await fetch('/api/fichajes/historial/' + empleadoValidado);
-            if (response.ok) {
-                const fichajes = await response.json();
-                const lista = document.getElementById('listaFichajes');
-                lista.innerHTML = ""; 
-                fichajes.reverse().slice(0, 5).forEach(f => {
-                    const hora = new Date(f.fechaHora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    lista.innerHTML += `<li class="historial-item"><span>${f.tipo === 'ENTRADA' ? '🟢' : '🔴'} ${f.tipo}</span> <span style="color: #888;">${hora}</span></li>`;
-                });
+                document.getElementById('errorLogin').innerText = "Usuario o contraseña incorrectos";
             }
         }
 
         async function verFichajesGlobales() {
-            const response = await fetch('/api/fichajes/todos');
-            if (response.ok) {
-                const fichajes = await response.json();
+            document.getElementById('listaEmpleadosContainer').style.display = 'none';
+            const res = await fetch('/api/fichajes/todos');
+            if (res.ok) {
+                const data = await res.json();
                 const body = document.getElementById('tablaGlobalBody');
                 body.innerHTML = ""; 
-                fichajes.reverse().forEach(f => {
-                    body.innerHTML += `<tr>
-                        <td>${f.empleadoId}</td>
-                        <td><strong>${f.nombreEmpleado}</strong></td>
-                        <td style="color: ${f.tipo === 'ENTRADA' ? 'green' : 'red'}">${f.tipo}</td>
-                        <td>${new Date(f.fechaHora).toLocaleString()}</td>
-                        <td><button onclick="eliminarEmpleado('${f.empleadoId}')" style="background:none; color:red; cursor:pointer; width:auto; padding:0;">🗑️</button></td>
-                    </tr>`;
+                data.reverse().forEach(f => {
+                    body.innerHTML += `<tr><td>${f.empleadoId}</td><td>${f.nombreEmpleado}</td><td style="color:${f.tipo==='ENTRADA'?'green':'red'}">${f.tipo}</td><td>${new Date(f.fechaHora).toLocaleString()}</td></tr>`;
                 });
                 document.getElementById('listaGlobalContainer').style.display = 'block';
                 document.getElementById('btnExcel').style.display = 'block';
             }
         }
 
-        async function registrarNuevo() {
-            const dni = document.getElementById('nuevoDni').value;
-            const nombre = document.getElementById('nuevoNombre').value;
-            const pass = document.getElementById('nuevoPass').value;
-            const rol = document.getElementById('nuevoRol').value;
-
-            if(!dni || !nombre || !pass) return alert("Rellena todos los campos");
-
-            await fetch('/api/fichajes/admin/registrar-trabajador', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ dni: dni, nombre: nombre, password: pass, rol: rol })
-            });
-            alert("¡Empleado registrado!");
-            location.reload();
+        async function verListaEmpleados() {
+            document.getElementById('listaGlobalContainer').style.display = 'none';
+            document.getElementById('btnExcel').style.display = 'none';
+            const res = await fetch('/api/fichajes/admin/lista-trabajadores');
+            if (res.ok) {
+                const data = await res.json();
+                const body = document.getElementById('tablaEmpleadosBody');
+                body.innerHTML = ""; 
+                data.forEach(e => {
+                    body.innerHTML += `<tr><td>${e.dni}</td><td><strong>${e.nombre}</strong></td><td>${e.rol}</td><td><button onclick="eliminarEmpleado('${e.dni}')" style="background:none; color:red; width:auto; padding:0;">🗑️ Eliminar</button></td></tr>`;
+                });
+                document.getElementById('listaEmpleadosContainer').style.display = 'block';
+            }
         }
 
         async function eliminarEmpleado(id) {
-            if(!confirm("¿Borrar a " + id + "?")) return;
-            await fetch('/api/fichajes/admin/eliminar-trabajador/' + id, { method: 'DELETE' });
-            verFichajesGlobales();
+            if(confirm("¿Estás seguro de que quieres eliminar a " + id + " de la empresa?")) {
+                await fetch('/api/fichajes/admin/eliminar-trabajador/' + id, { method: 'DELETE' });
+                verListaEmpleados();
+            }
+        }
+
+        async function registrarNuevo() {
+            await fetch('/api/fichajes/admin/registrar-trabajador', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ dni: document.getElementById('nuevoDni').value, nombre: document.getElementById('nuevoNombre').value, password: document.getElementById('nuevoPass').value, rol: document.getElementById('nuevoRol').value })
+            });
+            alert("Empleado añadido");
+            verListaEmpleados();
         }
 
         function exportarExcel() {
-            const tabla = document.getElementById("tablaParaExportar");
-            const html = '<meta charset="UTF-8">' + tabla.outerHTML;
+            const html = '<meta charset="UTF-8">' + document.getElementById("tablaParaExportar").outerHTML;
             const url = 'data:application/vnd.ms-excel,' + encodeURIComponent(html);
             const link = document.createElement("a");
             link.href = url;
-            link.download = "Reporte.xls";
+            link.download = "Historial_Fichajes.xls";
             link.click();
+        }
+
+        async function fichar(tipo) {
+            const response = await fetch('/api/fichajes/confirmar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ empleadoId: empleadoValidado, tipo: tipo, fechaHoraManual: document.getElementById('fechaFichaje').value + "T" + document.getElementById('horaFichaje').value + ":00" })
+            });
+            if (response.ok) {
+                document.getElementById('mensajeFichaje').innerText = "¡" + tipo + " guardada!";
+                document.getElementById('mensajeFichaje').style.color = (tipo === 'ENTRADA') ? "green" : "red";
+                actualizarBotones(tipo);
+                cargarHistorial();
+            }
+        }
+
+        function actualizarBotones(tipo) {
+            document.getElementById('btnEntrada').disabled = (tipo === 'ENTRADA');
+            document.getElementById('btnSalida').disabled = (tipo !== 'ENTRADA');
+        }
+
+        async function cargarHistorial() {
+            const res = await fetch('/api/fichajes/historial/' + empleadoValidado);
+            if (res.ok) {
+                const data = await res.json();
+                const lista = document.getElementById('listaFichajes');
+                lista.innerHTML = ""; 
+                data.reverse().slice(0, 5).forEach(f => {
+                    lista.innerHTML += `<li>${f.tipo === 'ENTRADA' ? '🟢' : '🔴'} ${f.tipo} - ${new Date(f.fechaHora).toLocaleTimeString()}</li>`;
+                });
+            }
         }
     </script>
 </body>

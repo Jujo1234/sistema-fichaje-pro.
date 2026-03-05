@@ -5,7 +5,7 @@ package webParaPicar;
  - Valida quién entra y qué permisos tiene (Rol).
  - Guarda los fichajes nuevos en la base de datos.
  - Entrega el historial personal a los empleados y el global al jefe.
- - Permite al jefe gestionar el personal (Alta/Baja).
+ - Permite al jefe gestionar el personal (Alta/Baja) en una sección dedicada.
  */
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/fichajes") // Dirección base para las llamadas desde la web
+@RequestMapping("/api/fichajes")
 public class FichajeController {
 
     @Autowired
@@ -32,24 +32,18 @@ public class FichajeController {
     // 1. BUZÓN DE VALIDACIÓN: Comprueba DNI, contraseña y devuelve el ROL
     @PostMapping("/validar")
     public ResponseEntity<?> validar(@RequestBody Map<String, String> datos) {
-        // Buscamos al trabajador en la tabla por su DNI
         Optional<Trabajador> t = trabajadorRepo.findById(datos.get("empleadoId"));
         
-        // Comparamos si existe y si la contraseña coincide
         if (t.isPresent() && t.get().getPassword().equals(datos.get("password"))) {
-            
-            // Buscamos su último movimiento para que la web sepa qué botón bloquear
             Optional<Fichaje> ultimo = fichajeRepo.findFirstByEmpleadoIdOrderByIdDesc(t.get().getDni());
             String estado = ultimo.isPresent() ? ultimo.get().getTipo() : "SALIDA"; 
 
-            // Devolvemos un paquete con: Nombre, Rol (jefe/empleado) y su último estado
             return ResponseEntity.ok(Map.of(
                 "nombre", t.get().getNombre(),
                 "rol", t.get().getRol(),
                 "ultimoTipo", estado
             ));
         }
-        // IMPORTANTE: Si llegamos aquí, enviamos error 401 para que la web muestre "Usuario no registrado"
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario o contraseña incorrectos");
     }
 
@@ -60,25 +54,18 @@ public class FichajeController {
             Fichaje f = new Fichaje();
             f.setEmpleadoId(datos.get("empleadoId"));
             f.setTipo(datos.get("tipo"));
-            
-            // Traducimos la fecha que viene de la web al formato de Java
-            LocalDateTime fechaManual = LocalDateTime.parse(datos.get("fechaHoraManual"));
-            f.setFechaHora(fechaManual);
-            
-            // Ordenamos al repositorio que guarde la ficha en MySQL
+            f.setFechaHora(LocalDateTime.parse(datos.get("fechaHoraManual")));
             fichajeRepo.save(f);
-            
-            return ResponseEntity.ok("¡Registro de " + datos.get("tipo") + " guardado!");
+            return ResponseEntity.ok("Fichaje guardado");
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error al guardar: " + e.getMessage());
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
     }
 
-    // 3. BUZÓN DE HISTORIAL PERSONAL: Para que el empleado vea sus últimos 5 movimientos
+    // 3. BUZÓN DE HISTORIAL PERSONAL
     @GetMapping("/historial/{empleadoId}")
     public ResponseEntity<List<Fichaje>> obtenerHistorial(@PathVariable String empleadoId) {
-        List<Fichaje> lista = fichajeRepo.findByEmpleadoId(empleadoId);
-        return ResponseEntity.ok(lista);
+        return ResponseEntity.ok(fichajeRepo.findByEmpleadoId(empleadoId));
     }
 
     // 4. BUZÓN GLOBAL (JEFE): Trae los fichajes con el nombre del empleado
@@ -86,14 +73,11 @@ public class FichajeController {
     public ResponseEntity<List<Map<String, Object>>> obtenerHistorialGlobal() {
         List<Fichaje> listaGlobal = fichajeRepo.findAll();
         List<Map<String, Object>> respuesta = new ArrayList<>();
-
         for (Fichaje f : listaGlobal) {
             Optional<Trabajador> t = trabajadorRepo.findById(f.getEmpleadoId());
-            String nombre = t.isPresent() ? t.get().getNombre() : "Empleado Eliminado";
-
             Map<String, Object> dato = new HashMap<>();
             dato.put("empleadoId", f.getEmpleadoId());
-            dato.put("nombreEmpleado", nombre);
+            dato.put("nombreEmpleado", t.isPresent() ? t.get().getNombre() : "Eliminado");
             dato.put("tipo", f.getTipo());
             dato.put("fechaHora", f.getFechaHora());
             respuesta.add(dato);
@@ -101,25 +85,23 @@ public class FichajeController {
         return ResponseEntity.ok(respuesta);
     }
 
-    // 5. REGISTRAR TRABAJADOR: Alta desde la web
+    // 5. REGISTRAR TRABAJADOR (Para el formulario de Alta)
     @PostMapping("/admin/registrar-trabajador")
     public ResponseEntity<String> registrar(@RequestBody Trabajador nuevo) {
-        try {
-            trabajadorRepo.save(nuevo);
-            return ResponseEntity.ok("Empleado registrado");
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error: " + e.getMessage());
-        }
+        trabajadorRepo.save(nuevo);
+        return ResponseEntity.ok("Empleado registrado");
     }
 
-    // 6. ELIMINAR TRABAJADOR: Baja desde la web
+    // 6. ELIMINAR TRABAJADOR (Baja desde la lista de gestión)
     @DeleteMapping("/admin/eliminar-trabajador/{id}")
     public ResponseEntity<String> eliminar(@PathVariable String id) {
-        try {
-            trabajadorRepo.deleteById(id);
-            return ResponseEntity.ok("Empleado eliminado");
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error: " + e.getMessage());
-        }
+        trabajadorRepo.deleteById(id);
+        return ResponseEntity.ok("Empleado eliminado");
+    }
+
+    // 7. LISTADO DE PERSONAL: Para que el jefe vea quiénes están en plantilla
+    @GetMapping("/admin/lista-trabajadores")
+    public ResponseEntity<List<Trabajador>> listarTodos() {
+        return ResponseEntity.ok(trabajadorRepo.findAll());
     }
 }
